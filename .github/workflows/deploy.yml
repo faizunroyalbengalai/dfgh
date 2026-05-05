@@ -169,10 +169,13 @@ jobs:
           version: 'v3.15.0'
       - name: Update kubeconfig
         run: |
-          aws eks update-kubeconfig \
-            --region "${{ secrets.AWS_REGION }}" \
-            --name "${{ needs.provision.outputs.cluster_name }}" \
-            || (echo "Cluster not found, waiting 60s and retrying..." && sleep 60 && aws eks update-kubeconfig --region "${{ secrets.AWS_REGION }}" --name "${{ needs.provision.outputs.cluster_name }}")
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            aws eks update-kubeconfig \
+              --region "${{ secrets.AWS_REGION }}" \
+              --name "${{ needs.provision.outputs.cluster_name }}" && break
+            echo "Attempt ${i} failed, waiting 60s and retrying..."
+            sleep 60
+          done
       - name: Create namespace
         run: |
           kubectl create namespace "${{ needs.provision.outputs.namespace }}" \
@@ -198,4 +201,3 @@ jobs:
             | sed 's/^-//; s/-$//' \
             | cut -c1-24 \
             | sed 's/-$//')
-          # Build --from-literal args from the JSON env map
